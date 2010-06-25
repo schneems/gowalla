@@ -159,10 +159,10 @@ class TestGowalla < Test::Unit::TestCase
       requests.first.username.should == 'juanchez'
     end
     
-    should "retrieve friends for a user" do
+    should "retrieve friends for a user" do 
       stub_get('http://pengwynn:0U812@api.gowalla.com/users/1707/friends', 'friends.json')
       friends = @client.friends(1707)
-      friends.size.should == 0
+      friends.size.should == 562 ## friends.json updated from http://gowalla.com/api/explorer#/users/1/friends
     end
     
     should "retrieve items for a user" do

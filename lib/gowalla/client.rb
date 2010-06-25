@@ -6,6 +6,7 @@ module Gowalla
     base_uri "http://api.gowalla.com"
     headers({'Accept' => 'application/json', "User-Agent" => 'Ruby gem'})
     
+        
     attr_reader :username
     
     def initialize(options={})
@@ -28,12 +29,12 @@ module Gowalla
       mashup(self.class.get("/visits/recent")).activity
     end
     
-    def friend_requests(user_id=self.username)
+    def friend_requests(user_id=self.username) ## ask gowalla about this one /friendships/request?user_id=1
       mashup(self.class.get("/users/#{user_id}/friend_requests")).friends_needing_approval
     end
     
-    def friends(user_id=self.username)
-      mashup(self.class.get("/users/#{user_id}/friends")).friends
+    def friends(user_id=self.username) ## changed .friends to .users
+      mashup(self.class.get("/users/#{user_id}/friends")).users
     end
     
     def items(user_id=self.username)
@@ -123,7 +124,6 @@ module Gowalla
     
     def checkin(spot_id, options = {})
       query = format_geo_options(options)
-      
       mashup(self.class.post("/checkins", :body => options, :query => { :spot_id => spot_id }))
     end
     
