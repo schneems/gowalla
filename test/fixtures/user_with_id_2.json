@@ -1,0 +1,44 @@
+{
+   "friends_count":533,
+   "last_checkins":[
+      {
+         "type":"checkin",
+         "url":"/checkins/11791069",
+         "message":"Happy 4th!",
+         "spot":{
+            "url":"/spots/43073",
+            "image_url":"http://static.gowalla.com/categories/38-69fb37a4291ebf8e325eb9ecf67f4a51-100.png",
+            "name":"Auditorium Shores"
+         },
+         "created_at":"2010-07-05T01:07:34Z"
+      }
+   ],
+   "items_url":"/users/2/items",
+   "items_count":10,
+   "bio":"Founder of Gowalla. Your Urban Cowboy Fashion Consultant\u2122",
+   "_bookmarked_spots_urls_url":"/users/2/bookmarked_spots_urls",
+   "pins_count":39,
+   "last_name":"Williams",
+   "photos_count":237,
+   "trips_url":"/users/2/trips",
+   "facebook_id":762975524,
+   "_image_url_200":"http://s3.amazonaws.com/static.gowalla.com/users/2-standard.jpg?1278032099",
+   "trips_count":6,
+   "url":"/users/2",
+   "bookmarked_spots_url":"/spots?bookmarks_user_id=2",
+   "friends_url":"/users/2/friends",
+   "add_friend_url":"/friendships/request?user_id=2",
+   "twitter_username":"",
+   "image_url":"http://s3.amazonaws.com/static.gowalla.com/users/2-standard.jpg?1278032099",
+   "bookmarked_spots_count":2,
+   "first_name":"Josh",
+   "activity_url":"/users/2/events",
+   "hometown":"Austin, Texas",
+   "stamps_url":"/users/2/stamps",
+   "photos_url":"/users/2/photos",
+   "_is_friend":false,
+   "website":"",
+   "pins_url":"/users/2/pins",
+   "top_spots_url":"/users/2/top_spots",
+   "stamps_count":785
+}

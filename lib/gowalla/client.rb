@@ -1,134 +1,213 @@
+
+require 'forwardable'
+# require 'callbackswrapper'
+
+
 module Gowalla
-  
   class Client
-    include HTTParty
-    format :json
-    base_uri "http://api.gowalla.com"
-    headers({'Accept' => 'application/json', "User-Agent" => 'Ruby gem'})
+    extend Forwardable
     
-        
-    attr_reader :username
+    
+    include Smashie
+    
+    
+    attr_reader :username, :api_key, :api_secret
+    
+    def_delegators :oauth_client, :web_server, :authorize_url, :access_token_url
+    
+    
+
+    ## extend_api is called when Hashie::Mash method_missing returns nil
+    ## use extend_api to implement custom Hashie::Mash methods
+    ## the code below expands a hash call to allow us to get json data inline
+    ## Example: 
+    ## 
+    def extend_api(caller, method_name, * args, &blk) 
+      if method_name.to_s  =~ /^get.*/    
+        if method_name.to_s == "get"
+          method_name = "url"
+        else
+          method_name = method_name.to_s.gsub( "get_", "") + "_url" 
+        end        
+        data_url = caller.send method_name
+        return connection.get(data_url).body
+      else
+        return nil
+      end
+    end
+    
+    
+    
+
     
     def initialize(options={})
-      api_key = options[:api_key] || Gowalla.api_key
+      @api_key = options[:api_key] || Gowalla.api_key
+      @api_secret = options[:api_secret] || Gowalla.api_secret
       @username = options[:username] || Gowalla.username
+      @access_token = options[:access_token]
       password = options[:password] || Gowalla.password
-      self.class.basic_auth(@username, password) unless @username.nil?
-      self.class.headers({'X-Gowalla-API-Key' => api_key }) unless api_key.nil?
+      connection.basic_auth(@username, password) unless @api_secret
+      connection.token_auth(@access_token) if @access_token
     end
     
-    def user(user_id=self.username)
-      mashup(self.class.get("/users/#{user_id}"))
+    # Retrieve information about a specific user
+    #
+    # @param [String] user_id (authenticated basic auth user) User ID (screen name)
+    # @return [Hashie::Mash] User info
+    def user(user_id=nil)
+      user_id ||= username
+      connection.get("/users/#{user_id}").body      
     end
-    
-    def events(user_id=self.username)
-      mashup(self.class.get("/users/#{user_id}/events")).activity
-    end
-    
-    def friends_events
-      mashup(self.class.get("/visits/recent")).activity
-    end
-    
-    def friend_requests(user_id=self.username) ## ask gowalla about this one /friendships/request?user_id=1
-      mashup(self.class.get("/users/#{user_id}/friend_requests")).friends_needing_approval
-    end
-    
-    def friends(user_id=self.username) ## changed .friends to .users
-      mashup(self.class.get("/users/#{user_id}/friends")).users
-    end
-    
-    def items(user_id=self.username)
-      mashup(self.class.get("/users/#{user_id}/items")).items
-    end
-    
-    def missing_items(user_id=self.username)
-      mashup(self.class.get("/users/#{user_id}/items/missing")).items
-    end
-    
-    def vaulted_items(user_id=self.username)
-      mashup(self.class.get("/users/#{user_id}/items/vault")).items
-    end
-    
+
+    # Retrieve information about a specific item
+    #
+    # @param [Integer] id Item ID
+    # @return [Hashie::Mash] item info
     def item(id)
-      mashup(self.class.get("/items/#{id}"))
+      connection.get("/items/#{id}").body
     end
-    
-    def pins(user_id=self.username)
-      mashup(self.class.get("/users/#{user_id}/pins"))
-    end
-    
+
+    # Retrieve a list of the stamps the user has collected
+    #
+    # @param [String] user_id (authenticated basic auth user) User ID (screen name)
+    # @param [Integer] limit (20) limit per page
+    # @return [Hashie::Mash] stamps info
     def stamps(user_id=self.username, limit=20)
-      mashup(self.class.get("/users/#{user_id}/stamps", :query => {:limit => limit})).stamps
+      response = connection.get do |req|
+        req.url "/users/#{user_id}/stamps", :limit => limit
+      end
+      response.body.stamps
     end
-    
+
+    # Retrieve a list of spots the user has visited most often
+    #
+    # @param [String] user_id (authenticated basic auth user) User ID (screen name)
+    # @return [Hashie::Mash] item info
     def top_spots(user_id=self.username)
-      mashup(self.class.get("/users/#{user_id}/top_spots")).top_spots
+      connection.get("/users/#{user_id}/top_spots").body.top_spots
     end
-    
-    def visited_spots(user_id=self.username)
-      mashup(self.class.get("/users/#{user_id}/visited_spots"))
-    end
-    
+
+    # Retrieve information about a specific trip
+    #
+    # @param [Integer] trip_id Trip ID
+    # @return [Hashie::Mash] trip info
     def trip(trip_id)
-      mashup(self.class.get("/trips/#{trip_id}"))
+      connection.get("/trips/#{trip_id}").body
     end
     
+    # Retrieve information about a specific spot
+    #
+    # @param [Integer] spot_id Spot ID
+    # @return [Hashie::Mash] Spot info
     def spot(spot_id)
-      mashup(self.class.get("/spots/#{spot_id}"))
+      connection.get("/spots/#{spot_id}").body
     end
     
+    # Retrieve a list of check-ins at a particular spot. Shows only the activity that is visible to a given user.
+    #
+    # @param [Integer] spot_id Spot ID
+    # @return [Hashie::Mash] Spot info
     def spot_events(spot_id)
-      mashup(self.class.get("/spots/#{spot_id}/events")).activity
+      connection.get("/spots/#{spot_id}/events").body.activity
     end
     
+    # Retrieve a list of items available at a particular spot
+    #
+    # @param [Integer] spot_id Spot ID
+    # @return [Hashie::Mash] Spot info
     def spot_items(spot_id)
-      mashup(self.class.get("/spots/#{spot_id}/items")).items
+      connection.get("/spots/#{spot_id}/items").body.items
     end
     
+    # Retrieve a list of spots within a specified distance of a location
+    #
+    # @option options [Float] :latitude Latitude of search location
+    # @option options [Float] :longitude Longitude of search location
+    # @option options [Integer] :radius Search radius (in meters)
+    # @return [Hashie::Mash] spots info
     def list_spots(options={})
       query = format_geo_options(options)
-      mashup(self.class.get("/spots", :query => query)).spots
+      response = connection.get do |req|
+        req.url "/spots", query
+      end
+      response.body.spots
     end
     
-    def featured_spots(options={})
-      list_spots(options.merge(:featured => 1))
-    end
-    
-    def bookmarked_spots(options={})
-      list_spots(options.merge(:bookmarked => 1))
-    end
-    
+    # List of trips
+    #
+    # @return [<Hashie::Mash>] trip info
     def trips(options={})
       if user_id = options.delete(:user_id)
         options[:user_url] = "/users/#{user_id}"
       end
       query = format_geo_options(options)
-      mashup(self.class.get("/trips", :query => query)).trips
+      response = connection.get do |req|
+        req.url "/trips", query
+      end
+      response.body.trips
     end
-    
-    def featured_trips(options={})
-      trips(options.merge(:context => 'featured'))
-    end
-    
-    def friends_trips(options={})
-      trips(options.merge(:context => 'friends'))
-    end
-    
+
+    # Lists all spot categories
+    #
+    # @return [<Hashie::Mash>] category info
     def categories
-      mashup(self.class.get("/categories")).spot_categories
+      connection.get("/categories").body.spot_categories
     end
     
+    # Retrieve information about a specific category
+    #
+    # @param [Integer] id Category ID
+    # @return [Hashie::Mash] category info
     def category(id)
-      mashup(self.class.get("/categories/#{id}"))
+      connection.get("/categories/#{id}").body
     end
     
-    def checkin(spot_id, options = {})
-      query = format_geo_options(options)
-      mashup(self.class.post("/checkins", :body => options, :query => { :spot_id => spot_id }))
+    # Check for missing access token
+    #
+    # @return [Boolean] whether or not to redirect to get an access token
+    def needs_access?
+      @api_secret and @access_token.to_s == ''
     end
     
+    # Raw HTTP connection, either Faraday::Connection 
+    #
+    # @return [Faraday::Connection]
+    def connection
+      url = @access_token ? "https://api.gowalla.com" : "http://api.gowalla.com"
+      params = {}
+      params[:access_token] = @access_token if @access_token
+      @connection ||= Faraday::Connection.new(:url => url, :params => params, :headers => default_headers) do |builder|
+        builder.adapter Faraday.default_adapter
+        builder.use Faraday::Response::MultiJson
+        builder.use Faraday::Response::Mashify
+      end
+            
+    end
+    
+    # Provides raw access to the OAuth2 Client
+    #
+    # @return [OAuth2::Client] 
+    def oauth_client
+      if @oauth_client
+        @oauth_client
+      else
+        conn ||= Faraday::Connection.new \
+          :url => "https://api.gowalla.com", 
+          :headers => default_headers
+
+        oauth= OAuth2::Client.new(api_key, api_secret, oauth_options = {
+          :site => 'https://api.gowalla.com',
+          :authorize_url => 'https://gowalla.com/api/oauth/new',
+          :access_token_url => 'https://gowalla.com/api/oauth/token'
+        })
+        oauth.connection = conn
+        oauth
+      end
+    end
+
     private
     
+      # @private
       def format_geo_options(options={})
         options[:lat] = "+#{options[:lat]}" if options[:lat].to_i > 0
         options[:lng] = "+#{options[:lng]}" if options[:lng].to_i > 0
@@ -137,21 +216,17 @@ module Gowalla
         end
         options
       end
-    
-      def mashup(response)
-        case response.code
-        when 200
-          if response.is_a?(Hash)
-            Hashie::Mash.new(response)
-          else
-            if response.first.is_a?(Hash)
-              response.map{|item| Hashie::Mash.new(item)}
-            else
-              response
-            end
-          end
-        end
+      
+      # @private
+      def default_headers
+        headers = {
+          :accept =>  'application/json', 
+          :user_agent => 'Ruby gem',
+          'X-Gowalla-API-Key' => api_key
+        }
       end
+      
+
     
   end
   

@@ -1,11 +1,18 @@
+puts "requireing gowalla awesomeness"
+
 require 'hashie'
-require 'httparty'
+require 'faraday'
+require 'multi_json'
+require 'oauth2'
+require 'faraday_middleware'
 
 directory = File.expand_path(File.dirname(__FILE__))
 
 Hash.send :include, Hashie::HashExtensions
 
 module Gowalla
+  
+  VERSION = "0.2.1".freeze
   
   # config/initializers/gowalla.rb (for instance)
   # 
@@ -27,8 +34,12 @@ module Gowalla
     attr_accessor :api_key
     attr_accessor :username
     attr_accessor :password
+    attr_accessor :api_secret
   end
   
 end
 
+
+require File.join(directory, 'smashie', 'smashie')
 require File.join(directory, 'gowalla', 'client')
+

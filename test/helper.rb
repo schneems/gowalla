@@ -1,14 +1,10 @@
 require 'test/unit'
 require 'pathname'
 require 'rubygems'
-
-gem 'shoulda', '>= 2.10.1'
-gem 'jnunemaker-matchy', '0.4.0'
-gem 'fakeweb', '>= 1.2.5'
-
 require 'shoulda'
 require 'matchy'
 require 'fakeweb'
+
 
 begin require 'redgreen'; rescue LoadError; end
 
@@ -33,7 +29,6 @@ end
 
 def stub_get(url, filename, options={})
   opts = {:body => fixture_file(filename)}.merge(options)
-  
   FakeWeb.register_uri(:get, gowalla_url(url), opts)
 end
 
